@@ -1,0 +1,6 @@
+modules:
+  default:
+    lmod:
+      blacklist_implicits: true
+      core_compilers:
+      - gcc@8.5.0

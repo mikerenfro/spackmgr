@@ -1,0 +1,5 @@
+/develop
+/git
+/sources/*
+!/sources/.gitkeep
+/v[0-9]*

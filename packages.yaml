@@ -1,0 +1,7 @@
+packages:
+  all:
+    target: ['x86_64_v3']
+  slurm:
+    externals:
+    - spec: slurm@22.05.2
+      prefix: /usr
