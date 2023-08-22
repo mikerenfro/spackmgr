@@ -43,23 +43,19 @@ function initialize_spack() {
     cd ${BASEDIR}/sources
 }
 
-do_cpu_spack_installs() {
+do_spack_installs() {
     while IFS= read -r spec ; do
         if [ -n "${spec}" ]; then
-            install_if_missing ${spec}
+            if echo ${spec} | grep -q __CA__; then
+                for cuda_arch in 37 80; do
+                    new_spec=$(echo ${spec} | sed "s/__CA__/${cuda_arch}/g")
+                    install_if_missing ${new_spec}
+                done
+            else
+                install_if_missing ${spec}
+            fi
         fi
-    done <<< "${CPU_SPECS_TO_BUILD}"
-}
-
-do_gpu_spack_installs() {
-    while IFS= read -r spec ; do
-        if [ -n "${spec}" ]; then
-            for cuda_arch in 37 80; do
-                new_spec=$(echo ${spec} | sed "s/__CA__/${cuda_arch}/g")
-                install_if_missing ${new_spec}
-            done
-        fi
-    done <<< "${GPU_SPECS_TO_BUILD}"
+    done <<< "${SPECS_TO_BUILD}"
 }
 
 do_gcc_installs() {
@@ -89,19 +85,39 @@ find_duplicates() {
 }
 
 # Enter specs to build, one per line
-CPU_SPECS_TO_BUILD='
+SPECS_TO_BUILD='
 openmpi@4.1.4+legacylaunchers fabrics=ucx schedulers=slurm ^ucx+verbs+rc+dc+ud+rdmacm
+mothur
 maker ^perl-dbd-mysql ^mysql@5.7 ^autoconf-archive
-r-tidyverse
-r-brms
-'
-
-GPU_SPECS_TO_BUILD='
+tophat
+trimmomatic
+velvetoptimiser
+blast-plus
+bowtie2
+circos
+exonerate
+fastqc
+gatk
+picard
+repeatmodeler
+siesta
 py-tensorflow@2.8+cuda cuda_arch=__CA__
 py-tensorflow@2.9+cuda cuda_arch=__CA__
 py-tensorflow@2.10+cuda cuda_arch=__CA__
 py-tensorflow@2.11+cuda cuda_arch=__CA__
-py-tensorflow@2.12+cuda cuda_arch=__CA__
+py-keras
+anaconda3
+apptainer
+miniconda3
+openfoam-org@2.4.0
+openfoam-org@10
+py-jupyter
+py-rasterio
+py-scikit-learn
+singularityce
+stress
+r-brms
+r-tidyverse
 '
 
 if [ $# -lt 1 ]; then
@@ -122,4 +138,3 @@ populate_destination_folder
 initialize_spack
 do_gcc_installs
 do_cpu_spack_installs
-do_gpu_spack_installs
