@@ -1,0 +1,32 @@
+openmpi@4.1.4+legacylaunchers fabrics=ucx schedulers=slurm ^ucx+verbs+rc+dc+ud+rdmacm
+mothur
+maker ^perl-dbd-mysql ^mysql@5.7 ^autoconf-archive
+tophat
+trimmomatic
+velvetoptimiser
+blast-plus
+bowtie2
+circos
+exonerate
+fastqc
+gatk
+picard
+repeatmodeler
+siesta
+py-tensorflow@2.8+cuda cuda_arch=__CA__
+py-tensorflow@2.9+cuda cuda_arch=__CA__
+py-tensorflow@2.10+cuda cuda_arch=__CA__
+py-tensorflow@2.11+cuda cuda_arch=__CA__
+py-keras
+anaconda3
+apptainer
+miniconda3
+openfoam-org@2.4.0
+openfoam-org@10
+py-jupyter
+py-rasterio
+py-scikit-learn
+singularityce
+stress
+r-brms
+r-tidyverse
