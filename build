@@ -55,7 +55,7 @@ do_spack_installs() {
                 install_if_missing ${spec}
             fi
         fi
-    done <<< "${SPECS_TO_BUILD}"
+    done < specs.txt
 }
 
 do_gcc_installs() {
