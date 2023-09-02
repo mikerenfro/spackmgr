@@ -1,0 +1,8 @@
+#!/bin/sh
+. ${PWD}/share/spack/setup-env.sh
+spack clean -m
+spack uninstall --all --yes-to-all
+spack install "$@"
+result=$?
+spack uninstall --all --yes-to-all
+exit $result
