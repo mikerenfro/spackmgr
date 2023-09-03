@@ -1,13 +1,15 @@
 #!/bin/bash
 set -e # exit on any non-zero exit code, need to work around for install_if_missing and find_duplicates
 
+INSTALL_OPTS="--reuse -j16"
+
 function install_if_missing() {
     set +e
     if spack find $@ >& /dev/null; then
         echo "### $@ already installed"
     else
         echo "### Building $@"
-        spack install --reuse -j16 $@
+        spack install ${INSTALL_OPTS} $@
     fi
     set -e
 }
@@ -31,7 +33,7 @@ populate_destination_folder() {
     fi
 
     # Copy local files to site-specific folder
-    cp -a ${BASEDIR}/{modules,packages}.yaml ${DESTDIR}/etc/spack/
+    cp -a ${BASEDIR}/modules.yaml ${DESTDIR}/etc/spack/
 }
 
 function initialize_spack() {
@@ -39,18 +41,25 @@ function initialize_spack() {
     . ${DESTDIR}/share/spack/setup-env.sh
     spack clean --misc-cache
 
-    # Move to source folder (for NAMD, mostly) and find new packages to build
+    # Move to source folder (for NAMD, mostly) and bootstrap compiler/package settings
     cd ${BASEDIR}/sources
+    spack compiler find --scope site
+    rm -f ~/.spack/linub/compilers.yaml
+    spack compiler find --scope site
+    cat > ${DESTDIR}/etc/spack/packages.yaml <<<EOD
+packages:
+  all:
+    target: ['x86_64_v3']
+EOD
 }
 
 do_spack_installs() {
     while IFS= read -r spec ; do
         if [ -n "${spec}" ]; then
             if echo ${spec} | grep -q __CA__; then
-                for cuda_arch in 37 80; do
-                    new_spec=$(echo ${spec} | sed "s/__CA__/${cuda_arch}/g")
-                    install_if_missing ${new_spec}
-                done
+                cuda_arch="37,80"
+                new_spec=$(echo ${spec} | sed "s/__CA__/${cuda_arch}/g")
+                install_if_missing ${new_spec}
             else
                 install_if_missing ${spec}
             fi
@@ -59,17 +68,25 @@ do_spack_installs() {
 }
 
 do_gcc_installs() {
-    for v in $(seq 9 13); do
+    min_gcc=$(( $(gcc -dumpversion) + 1 ))
+    max_gcc=$(spack versions -s gcc | grep '\.' | sort -nr | head -n1 | cut -d. -f1)
+    one_of="gcc@${min_gcc},"
+    for v in $(seq ${min_gcc} ${max_gcc}); do
         install_if_missing gcc@${v}
-        # find_duplicates
+        one_of="${one_of} 'gcc@$n',"
     done
+    one_of=$(echo ${one_of} | sed 's/,$//')
     for v in $(seq 9 13); do
         spack load gcc@${v}
     done
     spack compiler find --scope site
-    rm -f /root/.spack/linux/compilers.yaml
+    rm -f ~/.spack/linux/compilers.yaml
     spack unload --all
     spack compiler find --scope site
+    cat >> ${DESTDIR}/etc/spack/packages.yaml <<<EOD2
+    require:
+    - one_of: [${one_of}]
+EOD2
 }
 
 find_duplicates() {
@@ -93,6 +110,7 @@ fi
 
 REMOTEURL='https://github.com/spack/spack.git'
 REMOTETAG=$1
+shift
 BASEDIR=$(dirname $(realpath $0))
 CLONEDIR=${BASEDIR}/git
 DESTDIR=${BASEDIR}/$(basename ${REMOTETAG})
@@ -100,5 +118,9 @@ DESTDIR=${BASEDIR}/$(basename ${REMOTETAG})
 git_clone
 populate_destination_folder
 initialize_spack
-do_gcc_installs
-do_cpu_spack_installs
+if [ "$1" == "gcc" -o "$1" == "all" ]; then
+    do_gcc_installs
+fi
+if [ "$1" == "all" ]; then
+    do_spack_installs
+fi
