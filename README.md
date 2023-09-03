@@ -1,6 +1,51 @@
-# spack
+# spackmgr scripts
 
 Spack software packaging scripts and configurations.
+
+## Overview of files
+
+### README.md
+
+This file.
+
+### Vagrantfile
+
+Rules for building a Rocky 8 VM with minimum Spack dependencies via Vagrant.
+Can also install Slurm from EPEL to more closely emulate an HPC environment.
+
+### bisect
+
+Pass/fail script for [`git bisect`](https://stackoverflow.com/a/22592593/943299), intended to identify where a regression bug might have occurred.
+
+### build
+
+Bootstrapping script for Spack installations.
+Intended to be run from a folder that will be the parent of the Spack installation.
+1. Clones the official Spack repository into a `git` folder, then runs `git archive` against a given release tag to create the Spack root for this version.
+2. Copies updated package recipies from a `package-fixes` subfolder for that release tag.
+3. If Slurm is installed, adds it as an external package.
+4. Optionally, does `spack` installations of every newer major release of `gcc`, and adds them to the `spack compiler` list.
+5. Optionally, does `spack` installations of all specs listed in `specs.txt`.
+
+### package-fixes
+
+A directory tree of updated files to be copied into the `var/spack/repos/builtin/packages` folder.
+
+### shdotenv
+
+Copy of [`shdotenv` 0.13.0](https://github.com/ko1nksm/shdotenv/releases/tag/v0.13.0), for use with `spackify`.
+
+### sources
+
+Placeholder folder for third-party source code (NAMD, Maker, etc.).
+
+### spackify
+
+Script run with `sudo` delegating Spack software management to research software engineers.
+
+### specs.txt
+
+List of `spack` specs to install.
 
 ## Chaining a user-managed Spack installation from a centrally-managed one
 
