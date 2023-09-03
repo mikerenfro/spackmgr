@@ -1,9 +1,0 @@
-packages:
-  all:
-    target: ['x86_64_v3']
-    require:
-    - one_of: ['%gcc@8', '%gcc@9', '%gcc@10', '%gcc@11', '%gcc@12', '%gcc@13']
-  slurm:
-    externals:
-    - spec: slurm@22.05.2
-      prefix: /usr
