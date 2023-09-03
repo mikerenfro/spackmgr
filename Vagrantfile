@@ -9,8 +9,9 @@ Vagrant.configure("2") do |config|
     vb.cpus = 4
   end
   config.vm.provision "shell", inline: <<-SHELL
-    yum -y install gcc gcc-c++ gcc-gfortran git patch epel-release
-    crb enable
-    yum -y install slurm
+    # Bare minimum Spack dependencies
+    yum -y install gcc gcc-c++ gcc-gfortran git patch
+    # If we need Slurm:
+    yum -y install epel-release ; crb enable ; yum -y install slurm
   SHELL
 end
