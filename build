@@ -1,8 +1,6 @@
 #!/bin/bash
 set -e # exit on any non-zero exit code, need to work around for install_if_missing and find_duplicates
 
-INSTALL_OPTS="--reuse -j16"
-
 function install_if_missing() {
     set +e
     if spack find $@ >& /dev/null; then
@@ -31,23 +29,33 @@ populate_destination_folder() {
         git archive --format=tar ${REMOTETAG} | ( cd ${DESTDIR} && tar -xf - )
         chmod -R 755 ${DESTDIR}
     fi
-
-    # Copy local files to site-specific folder
-    cp -a ${BASEDIR}/modules.yaml ${DESTDIR}/etc/spack/
 }
 
 function initialize_spack() {
     # Initialize new spack install, clean cache
     . ${DESTDIR}/share/spack/setup-env.sh
     spack clean --misc-cache
-
+    cp -av ${BASEDIR}/package-fixes/${REMOTETAG}/* ${DESTDIR}/var/spack/repos/builtin/packages/
     # Move to source folder (for NAMD, mostly) and bootstrap compiler/package settings
     cd ${BASEDIR}/sources
     spack compiler find --scope site
     rm -f ~/.spack/linub/compilers.yaml
     spack compiler find --scope site
-    cat > ${DESTDIR}/etc/spack/packages.yaml <<<EOD
-packages:
+    echo "packages:" > ${DESTDIR}/etc/spack/packages.yaml
+    set +e
+    sinfo=$(command -v sinfo)
+    if [ "${sinfo}" != "" ]; then
+        slurm_version=$(${sinfo} --version | awk '{print $NF}')
+        slurm_prefix=$(dirname $(dirname ${sinfo}))
+        cat >> ${DESTDIR}/etc/spack/packages.yaml <<EOD
+  slurm:
+    externals:
+    - spec: slurm@${slurm_version}
+      prefix: ${slurm_prefix}
+EOD
+    fi
+    set -e
+    cat >> ${DESTDIR}/etc/spack/packages.yaml <<EOD
   all:
     target: ['x86_64_v3']
 EOD
@@ -76,17 +84,17 @@ do_gcc_installs() {
         one_of="${one_of} 'gcc@$n',"
     done
     one_of=$(echo ${one_of} | sed 's/,$//')
-    for v in $(seq 9 13); do
+    for v in $(seq ${min_gcc} ${max_gcc}); do
         spack load gcc@${v}
     done
     spack compiler find --scope site
     rm -f ~/.spack/linux/compilers.yaml
     spack unload --all
     spack compiler find --scope site
-    cat >> ${DESTDIR}/etc/spack/packages.yaml <<<EOD2
+    cat >> ${DESTDIR}/etc/spack/packages.yaml <<EOD
     require:
     - one_of: [${one_of}]
-EOD2
+EOD
 }
 
 find_duplicates() {
@@ -108,12 +116,14 @@ if [ $# -lt 1 ]; then
     exit 1
 fi
 
+CORES=$(grep '^processor' /proc/cpuinfo  | wc -l)
+INSTALL_OPTS="--reuse -j${CORES}"
 REMOTEURL='https://github.com/spack/spack.git'
 REMOTETAG=$1
 shift
 BASEDIR=$(dirname $(realpath $0))
-CLONEDIR=${BASEDIR}/git
-DESTDIR=${BASEDIR}/$(basename ${REMOTETAG})
+CLONEDIR=${PWD}/git
+DESTDIR=${PWD}/$(basename ${REMOTETAG})
 
 git_clone
 populate_destination_folder
