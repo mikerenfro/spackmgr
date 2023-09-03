@@ -1,8 +1,8 @@
 #!/bin/bash
+SPACK_HOME=/opt/ohpc/pub/spack
 SUDO_HOME=$(eval echo ~${SUDO_USER})
-#cat ${SUDO_HOME}/.spack_setup
-eval $(/opt/ohpc/pub/spack/shdotenv -e ${SUDO_HOME}/.spack_setup)
-#echo SPACK_VER is ${SPACK_VER}
+BASEDIR=$(dirname $(realpath $0))
+eval $(${BASEDIR}/shdotenv -e ${SUDO_HOME}/.spack_setup)
 
 export SPACK_VER=${SPACK_VER:-v0.20.1}
 export DISABLE_SYSTEM_SPACK=${DISABLE_SYSTEM_SPACK:-0}
@@ -10,7 +10,7 @@ export DISABLE_SYSTEM_SPACK=${DISABLE_SYSTEM_SPACK:-0}
 if [ $DISABLE_SYSTEM_SPACK -eq 1 ]; then
     :
 else
-    . /opt/ohpc/pub/spack/${SPACK_VER}/share/spack/setup-env.sh
+    . ${SPACK_HOME}/${SPACK_VER}/share/spack/setup-env.sh
 fi
 
 if [ "$1" == "install" -o \
