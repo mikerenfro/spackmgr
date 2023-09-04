@@ -2,6 +2,14 @@
 
 Spack software packaging scripts and configurations.
 
+## TL;DR
+
+`mkdir -p /path/to/spack_parent; cd /path/to/spack_parent ; /path/to/spackmgr/build v0.20.1 gcc`
+
+## Usage
+
+`/path/to/spackmgr/build release_tag [gcc|all]`, where `release_tag` is any valid [Spack Git tag](https://github.com/spack/spack/tags).
+
 ## Overview of files
 
 ### README.md
