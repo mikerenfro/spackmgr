@@ -2,6 +2,14 @@
 
 Spack software packaging scripts and configurations.
 
+## TL;DR
+
+`mkdir -p /path/to/spack_parent; cd /path/to/spack_parent ; /path/to/spackmgr/build v0.20.1 gcc`
+
+## Usage
+
+`/path/to/spackmgr/build release_tag [gcc|all]`, where `release_tag` is any valid [Spack Git tag](https://github.com/spack/spack/tags).
+
 ## Overview of files
 
 ### README.md
@@ -24,7 +32,7 @@ Intended to be run from a folder that will be the parent of the Spack installati
 1. Clones the official Spack repository into a `git` folder, then runs `git archive` against a given release tag to create the Spack root for this version.
 2. Copies updated package recipies from a `package-fixes` subfolder for that release tag.
 3. If Slurm is installed, adds it as an external package.
-4. Optionally, does `spack` installations of every newer major release of `gcc`, and adds them to the `spack compiler` list.
+4. Optionally, does `spack` installations of every newer major release of `gcc`, adds them to the `spack compiler` list, and uses older compiler versions by default.
 5. Optionally, does `spack` installations of all specs listed in `specs.txt`.
 
 ### package-fixes

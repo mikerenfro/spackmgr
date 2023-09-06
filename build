@@ -110,9 +110,11 @@ find_duplicates() {
 }
 
 if [ $# -lt 1 ]; then
-    echo "Usage: $0 tag"
+    echo "Usage: $0 tag [gcc|all]"
     echo "where: tag is a Spack Git tag"
     echo "(usually from https://github.com/spack/spack/tags (e.g., v0.19.1)"
+    echo "Add the parameter 'gcc' to install all newer versions of GCC,"
+    echo "or add the parameter 'all' to also install packages from specs.txt"
     exit 1
 fi
 
