@@ -21,9 +21,10 @@ This file.
 Rules for building a Rocky 8 VM with minimum Spack dependencies via Vagrant.
 Can also install Slurm from EPEL to more closely emulate an HPC environment.
 
-### bisect
+### bisect-installing-spec
 
-Pass/fail script for [`git bisect`](https://stackoverflow.com/a/22592593/943299), intended to identify where a regression bug might have occurred.
+Pass/fail script for [`git bisect`](https://stackoverflow.com/a/22592593/943299), intended to identify where a regression bug might have occurred for installing a particular spec.
+Can be adapted to other purposes.
 
 ### build
 
