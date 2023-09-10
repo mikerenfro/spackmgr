@@ -2,7 +2,11 @@
 . ${PWD}/share/spack/setup-env.sh
 spack clean -m
 spack uninstall --all --yes-to-all
-spack install "$@"
-result=$?
+# https://stackoverflow.com/a/22592593/943299
+result=0
+spack install "$@" || result=$?
+if [ "$status" -eq 125 ] || [ "$status" -gt 127 ]; then
+  status=1
+fi
 spack uninstall --all --yes-to-all
 exit $result
