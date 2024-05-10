@@ -2,7 +2,9 @@
 BASEDIR=$(dirname $(realpath $0))
 USE_CLUSTER=0
 CLUSTER_PARTITION=batch-impulse
+NODES=1
 PARALLEL_INSTALLS=1
+CLUSTER_JOB_ACCOUNT=hpcadmins
 CUDA_ARCH="37,80"
 REMOTEURL='https://github.com/spack/spack.git'
 REMOTETAG=$1
