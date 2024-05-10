@@ -255,7 +255,7 @@ function do_full_install() {
     initialize_spack
     if [ "$2" == "gcc" ]; then
         do_gcc_installs
-        spack gc --yes-to-all
+        # spack gc --yes-to-all
     elif [ "$2" == "all" ]; then
         do_gcc_installs
         do_spack_installs
@@ -271,8 +271,8 @@ fi
 
 if [ "${USE_CLUSTER}" == "1" ]; then
     # for cluster installations
-    NODES=$(scontrol show partition ${CLUSTER_PARTITION} --oneline | grep -o ' Nodes=[[:graph:]]*' | cut -d= -f2)
-    NODE_MINCPUS=$(scontrol show node ${NODES} --oneline | grep -o 'CfgTRES=[[:graph:]]*' | sort | grep -o 'cpu=[[:digit:]]*' | cut -d= -f2 | sort -n | uniq | head -1)
+    PARTITION_NODES=$(scontrol show partition ${CLUSTER_PARTITION} --oneline | grep -o ' Nodes=[[:graph:]]*' | cut -d= -f2)
+    NODE_MINCPUS=$(scontrol show node ${PARTITION_NODES} --oneline | grep -o 'CfgTRES=[[:graph:]]*' | sort | grep -o 'cpu=[[:digit:]]*' | cut -d= -f2 | sort -n | uniq | head -1)
     PARTITION_MAXCPUS=$(scontrol show partition ${CLUSTER_PARTITION} --oneline | grep -o ' MaxCPUsPerNode=[[:graph:]]*' | cut -d= -f2)
     if [ ${PARTITION_MAXCPUS} == "UNLIMITED" ]; then
         MINCPUS=${NODE_MINCPUS}
