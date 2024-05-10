@@ -280,7 +280,7 @@ if [ "${USE_CLUSTER}" == "1" ]; then
         MINCPUS=${PARTITION_MAXCPUS}
     fi
     CPUS_PER_TASK=$((${MINCPUS} / ${PARALLEL_INSTALLS}))
-    SRUN="srun --ntasks-per-node=${PARALLEL_INSTALLS} --cpus-per-task=${CPUS_PER_TASK} --nodes=2 --account=hpcadmins --partition=${CLUSTER_PARTITION}"
+    SRUN="srun --ntasks-per-node=${PARALLEL_INSTALLS} --cpus-per-task=${CPUS_PER_TASK} --nodes=1 --account=hpcadmins --partition=${CLUSTER_PARTITION}"
     J_FLAG=${CPUS_PER_TASK}
 else
     # for local installations
