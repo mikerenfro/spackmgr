@@ -266,7 +266,13 @@ fi
 if [ "${USE_CLUSTER}" == "1" ]; then
     # for cluster installations
     NODES=$(scontrol show partition ${CLUSTER_PARTITION} --oneline | grep -o ' Nodes=[[:graph:]]*' | cut -d= -f2)
-    MINCPUS=$(scontrol show node ${NODES} --oneline | grep -o 'CfgTRES=[[:graph:]]*' | sort | grep -o 'cpu=[[:digit:]]*' | cut -d= -f2 | sort -n | uniq | head -1)
+    NODE_MINCPUS=$(scontrol show node ${NODES} --oneline | grep -o 'CfgTRES=[[:graph:]]*' | sort | grep -o 'cpu=[[:digit:]]*' | cut -d= -f2 | sort -n | uniq | head -1)
+    PARTITION_MAXCPUS=$(scontrol show partition ${CLUSTER_PARTITION} --oneline | grep -o ' MaxCPUsPerNode=[[:graph:]]*' | cut -d= -f2)
+    if [ ${PARTITION_MAXCPUS} == "UNLIMITED" ]; then
+        MINCPUS=${NODE_MINCPUS}
+    else
+        MINCPUS=${PARTITION_MAXCPUS}
+    fi
     CPUS_PER_TASK=$((${MINCPUS} / ${PARALLEL_INSTALLS}))
     SRUN="srun --ntasks-per-node=${PARALLEL_INSTALLS} --cpus-per-task=${CPUS_PER_TASK} --nodes=2 --account=hpcadmins --partition=${CLUSTER_PARTITION}"
     J_FLAG=${CPUS_PER_TASK}
