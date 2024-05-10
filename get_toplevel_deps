@@ -1,0 +1,9 @@
+#!/usr/bin/env spack-python
+import sys
+from spack.spec import Spec
+if __name__ == "__main__":
+    s = Spec(' '.join(sys.argv[1:]))
+    s.concretize()
+    toplevel_deps = s.node_dict_with_hashes()['dependencies']
+    for d in toplevel_deps:
+        print(f"/{d['hash']}")

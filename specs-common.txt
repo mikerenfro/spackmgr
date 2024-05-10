@@ -1,0 +1,71 @@
+openmpi +legacylaunchers fabrics=ucx schedulers=slurm ^pmix@4.2.1 ^ucx+verbs+rc+dc+ud+rdmacm
+anaconda3
+blast-plus
+bowtie2
+circos
+exonerate
+gatk
+miniconda3
+mothur
+#openfoam-org@6 --dependencies
+picard
+py-tensorflow+mpi+cuda cuda_arch=__CA__  #this needs to go in before keras, opencv, and torch packages
+opencv+cuda+openmp+python3+dnn+ffmpeg+webp+png+cublas+tiff+cudnn+video+cufft+ml cuda_arch=37,80 ^curl+libidn2 
+py-scikit-learn
+r-brms
+r-tidyverse
+py-ipyrad ^curl+libidn2 
+apptainer ^curl+libidn2
+py-rasterio ^curl+libidn2
+py-jupyter ^python@3.10
+singularityce ^curl+libidn2
+stress
+trimmomatic
+velvetoptimiser
+hdf5+hl+mpi+cxx+fortran+java 
+py-mpi4py  
+py-netcdf4 
+netcdf-c
+#py-h5py
+netcdf-fortran 
+netlib-scalapack
+siesta
+maker+mpi ^perl-dbd-mysql ^mysql@5 ^boost@1.83.0+mpi ^curl+libidn2 ^autoconf-archive ^repeatmasker@4.0.9
+valgrind ^boost+mpi 
+tophat
+fftw
+hmmer
+raxml
+parmetis
+scotch
+libvips
+npm
+openfoam-org 
+repeatmodeler ^curl+libidn2 
+maker+mpi ^mysql@5 ^curl+libidn2
+py-tensorflow
+py-keras
+py-torch cuda_arch=__CA__ 
+py-torchvision 
+py-torch-geometric+cuda
+py-keras
+py-intervaltree
+py-matplotlib@3.6
+py-matplotlib@2.2
+kokkos@4.0.01%gcc@12+cuda cuda_arch=80
+kokkos@4.0.01%gcc@12~cuda
+cabana+cuda%gcc@12.3.0+cajita+openmp+grid cuda_arch=80 ^kokkos@4.0.01%gcc@12
+cabana~cuda%gcc@12.3.0+cajita+openmp+grid ^kokkos@4.0.01%gcc@12
+py-nilearn
+py-dask
+fastp
+fastqc
+hisat2
+orthofinder
+trimal
+iq-tree
+iqtree2
+trimgalore
+mummer
+cufflinks
+py-htseq

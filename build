@@ -1,138 +1,15 @@
 #!/bin/bash
-set -e # exit on any non-zero exit code, need to work around for install_if_missing and find_duplicates
-
-function install_if_missing() {
-    set +e
-    if spack find $@ >& /dev/null; then
-        echo "### $@ already installed"
-    else
-        echo "### Building $@"
-        spack install ${INSTALL_OPTS} $@
-    fi
-    set -e
-}
-
-function git_clone() {
-    # Get latest code from git
-    if [ ! -d "${CLONEDIR}/.git" ]; then
-        git clone -c feature.manyFiles=true ${REMOTEURL} ${CLONEDIR} && \
-            cd ${CLONEDIR}
-    else
-        cd ${CLONEDIR} && git pull
-    fi
-}
-
-populate_destination_folder() {
-    # Populate destination folder
-    if [ ! -d ${DESTDIR} ]; then
-        mkdir -p ${DESTDIR}
-        git archive --format=tar ${REMOTETAG} | ( cd ${DESTDIR} && tar -xf - )
-        chmod -R 755 ${DESTDIR}
-    fi
-}
-
-function initialize_spack() {
-    # Initialize new spack install, clean cache
-    . ${DESTDIR}/share/spack/setup-env.sh
-    spack clean --misc-cache
-    cp -av ${BASEDIR}/package-fixes/${REMOTETAG}/* ${DESTDIR}/var/spack/repos/builtin/packages/
-    # Move to source folder (for NAMD, mostly) and bootstrap compiler/package settings
-    cd ${BASEDIR}/sources
-    spack compiler find --scope site
-    rm -f ~/.spack/linub/compilers.yaml
-    spack compiler find --scope site
-    echo "packages:" > ${DESTDIR}/etc/spack/packages.yaml
-    set +e
-    sinfo=$(command -v sinfo)
-    if [ "${sinfo}" != "" ]; then
-        slurm_version=$(${sinfo} --version | awk '{print $NF}')
-        slurm_prefix=$(dirname $(dirname ${sinfo}))
-        cat >> ${DESTDIR}/etc/spack/packages.yaml <<EOD
-  slurm:
-    externals:
-    - spec: slurm@${slurm_version}
-      prefix: ${slurm_prefix}
-EOD
-    fi
-    set -e
-    cat >> ${DESTDIR}/etc/spack/packages.yaml <<EOD
-  all:
-    target: ['x86_64_v3']
-EOD
-}
-
-do_spack_installs() {
-    while IFS= read -r spec ; do
-        if [ -n "${spec}" ]; then
-            if echo ${spec} | grep -q __CA__; then
-                cuda_arch="37,80"
-                new_spec=$(echo ${spec} | sed "s/__CA__/${cuda_arch}/g")
-                install_if_missing ${new_spec}
-            else
-                install_if_missing ${spec}
-            fi
-        fi
-    done < specs.txt
-}
-
-do_gcc_installs() {
-    min_gcc=$(( $(gcc -dumpversion) + 1 ))
-    max_gcc=$(spack versions -s gcc | grep '\.' | sort -nr | head -n1 | cut -d. -f1)
-    one_of="gcc@${min_gcc},"
-    for v in $(seq ${min_gcc} ${max_gcc}); do
-        install_if_missing gcc@${v}
-        one_of="${one_of} 'gcc@$n',"
-    done
-    one_of=$(echo ${one_of} | sed 's/,$//')
-    for v in $(seq ${min_gcc} ${max_gcc}); do
-        spack load gcc@${v}
-    done
-    spack compiler find --scope site
-    rm -f ~/.spack/linux/compilers.yaml
-    spack unload --all
-    spack compiler find --scope site
-    cat >> ${DESTDIR}/etc/spack/packages.yaml <<EOD
-    require:
-    - one_of: [${one_of}]
-EOD
-}
-
-find_duplicates() {
-    set +e
-    spack find | sort | uniq -c | grep -v ' 1 ' >& /dev/null
-    if [ $? -ne 1 ]; then
-        echo "Duplicate packages/versions found:"
-        spack find | sort | uniq -c | grep -v ' 1 '
-    else
-        echo "No duplicates found"
-    fi
-    set -e
-}
-
-if [ $# -lt 1 ]; then
-    echo "Usage: $0 tag [gcc|all]"
-    echo "where: tag is a Spack Git tag"
-    echo "(usually from https://github.com/spack/spack/tags (e.g., v0.19.1)"
-    echo "Add the parameter 'gcc' to install all newer versions of GCC,"
-    echo "or add the parameter 'all' to also install packages from specs.txt"
-    exit 1
-fi
-
-CORES=$(grep '^processor' /proc/cpuinfo  | wc -l)
-INSTALL_OPTS="--reuse -j${CORES}"
+BASEDIR=$(dirname $(realpath $0))
+USE_CLUSTER=0
+CLUSTER_PARTITION=batch-impulse
+PARALLEL_INSTALLS=1
+CUDA_ARCH="37,80"
 REMOTEURL='https://github.com/spack/spack.git'
 REMOTETAG=$1
-shift
-BASEDIR=$(dirname $(realpath $0))
 CLONEDIR=${PWD}/git
 DESTDIR=${PWD}/$(basename ${REMOTETAG})
 
-git_clone
-populate_destination_folder
-initialize_spack
-if [ "$1" == "gcc" -o "$1" == "all" ]; then
-    do_gcc_installs
-fi
-if [ "$1" == "all" ]; then
-    do_spack_installs
-fi
+source ${BASEDIR}/functions.sh
+INSTALL_OPTS="-j${J_FLAG}" # comes from functions.sh
+
+do_full_install $1 $2

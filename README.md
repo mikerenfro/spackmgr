@@ -34,7 +34,7 @@ Intended to be run from a folder that will be the parent of the Spack installati
 2. Copies updated package recipies from a `package-fixes` subfolder for that release tag.
 3. If Slurm is installed, adds it as an external package.
 4. Optionally, does `spack` installations of every newer major release of `gcc`, adds them to the `spack compiler` list, and uses older compiler versions by default.
-5. Optionally, does `spack` installations of all specs listed in `specs.txt`.
+5. Optionally, does `spack` installations of all specs listed in `specs-common.txt` and `specs-RELEASE.txt`.
 
 ### package-fixes
 
@@ -52,9 +52,10 @@ Placeholder folder for third-party source code (NAMD, Maker, etc.).
 
 Script run with `sudo` delegating Spack software management to research software engineers.
 
-### specs.txt
+### specs-common.txt
 
 List of `spack` specs to install.
+Can also add `specs-release.txt` for specs specific to a particular Spack release.
 
 ## Chaining a user-managed Spack installation from a centrally-managed one
 
