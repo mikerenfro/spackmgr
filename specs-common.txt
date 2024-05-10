@@ -1,4 +1,4 @@
-openmpi +legacylaunchers fabrics=ucx schedulers=slurm ^pmix@4.2.1 ^ucx+verbs+rc+dc+ud+rdmacm
+openmpi +legacylaunchers fabrics=ucx schedulers=slurm ^pmix@4 ^ucx+verbs+rc+dc+ud+rdmacm
 anaconda3
 blast-plus
 bowtie2
