@@ -186,27 +186,31 @@ function do_gcc_installs() {
     # New gcc bootstrapping method to use OS-provided gcc to build latest,
     # then uninstall spack packages related to OS-provided gcc.
 
-    # For whatever reason, it seems that gcc 13 can't be built without
-    # autoconf-archive available.
-    install_if_missing autoconf-archive%gcc@${def_gcc}
-    spack load autoconf-archive%gcc@${def_gcc}
-    # Build latest gcc with OS gcc, load it, add to available compilers list
-    install_if_missing gcc@${max_gcc}%gcc@${def_gcc}
-    spack load gcc@${max_gcc}%gcc@${def_gcc}
-    spack compiler find --scope=site
-    spack unload --all
+    if spack find gcc@${max_gcc}%gcc@${max_gcc} >& /dev/null; then
+        echo "### gcc@${max_gcc}%gcc@${max_gcc} already installed"
+    else
+        # For whatever reason, it seems that gcc 13 can't be built without
+        # autoconf-archive available.
+        install_if_missing autoconf-archive%gcc@${def_gcc}
+        spack load autoconf-archive%gcc@${def_gcc}
+        # Build latest gcc with OS gcc, load it, add to available compilers list
+        install_if_missing gcc@${max_gcc}%gcc@${def_gcc}
+        spack load gcc@${max_gcc}%gcc@${def_gcc}
+        spack compiler find --scope=site
+        spack unload --all
 
-    # Rebuild latest gcc from scratch with latest gcc
-    spack_install_with_args --fresh gcc@${max_gcc}%gcc@${max_gcc}
-    # Load the latest-latest gcc, remove previous latest gcc from available
-    # compilers list, add latest-latest to available compilers list.
-    spack load gcc@${max_gcc}%gcc@${max_gcc}
-    spack compiler rm gcc@${max_gcc}
-    spack compiler find --scope=site
-    spack unload --all
+        # Rebuild latest gcc from scratch with latest gcc
+        spack_install_with_args --fresh gcc@${max_gcc}%gcc@${max_gcc}
+        # Load the latest-latest gcc, remove previous latest gcc from available
+        # compilers list, add latest-latest to available compilers list.
+        spack load gcc@${max_gcc}%gcc@${max_gcc}
+        spack compiler rm gcc@${max_gcc}
+        spack compiler find --scope=site
+        spack unload --all
 
-    # Uninstall all packages built with OS gcc
-    spack uninstall --all --yes-to-all %gcc@${def_gcc}
+        # Uninstall all packages built with OS gcc
+        spack uninstall --all --yes-to-all %gcc@${def_gcc}
+    fi
     
     for v in $(seq ${max_gcc} -1 ${min_gcc}); do
         install_if_missing gcc@${v}%gcc@${max_gcc}
