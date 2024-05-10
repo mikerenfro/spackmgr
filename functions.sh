@@ -1,4 +1,4 @@
-#set -e # exit on any non-zero exit code
+set -e # exit on any non-zero exit code
 
 function add_if_missing() {
     grep -qFx "$1" $2 || echo "$1" >> $2
@@ -9,7 +9,7 @@ function remove_if_present() {
 }
 
 function install_if_missing() {
-    #`set +e
+    set +e
     spec_to_install=""
     only_deps=0
     if echo "$@" | grep -q -- "--only dependencies"; then
@@ -56,7 +56,7 @@ function install_if_missing() {
         # unload everything to clean up for next time
         spack unload --all
     fi
-#   set -e
+  set -e
 }
 
 function spack_install_with_args() {
@@ -114,7 +114,7 @@ EOD
     fi
     if [ ! -f ${DESTDIR}/etc/spack/packages.yaml ]; then
         echo "packages:" > ${DESTDIR}/etc/spack/packages.yaml
-        #`set +e
+        set +e
         if command -v sinfo > /dev/null; then
             slurm_version=$(sinfo --version | awk '{print $NF}')
             slurm_prefix=$(dirname $(dirname $(which sinfo)))
@@ -146,7 +146,7 @@ EOD
     buildable: False
 EOD
         fi
-#        set -e
+       set -e
         cat >> ${DESTDIR}/etc/spack/packages.yaml <<EOD
   all:
     target: ['x86_64_v3']
@@ -225,12 +225,12 @@ function do_gcc_installs() {
 }
 
 function find_duplicates() {
-    #`set +e
+    set +e
     if spack find | grep @ | grep -v / | sort | uniq -c | grep -qv ' 1 '; then
         echo "Duplicate packages/versions found:"
         spack find | sort | uniq -c | grep -v ' 1 '
     fi
-#    set -e
+   set -e
 }
 
 usage() {
