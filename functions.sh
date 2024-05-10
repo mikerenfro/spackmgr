@@ -61,11 +61,13 @@ function install_if_missing() {
 
 function spack_install_with_args() {
     args=$@
+    set -e
     if [ -z "${SRUN}" ]; then
         spack install ${INSTALL_OPTS} ${args}
     else
         ${SRUN} ${DESTDIR}/bin/spack install ${INSTALL_OPTS} ${args}
     fi
+    set +e
 }
 
 function git_clone() {
