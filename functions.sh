@@ -43,11 +43,7 @@ function install_if_missing() {
     if [ "${spec_to_install}" != "" ]; then
         # install the spec
         echo "### Installing ${spec_to_install}"
-        if [ -z "${SRUN}" ]; then
-            spack install ${INSTALL_OPTS} ${spec_to_install}
-        else
-            ${SRUN} ${DESTDIR}/bin/spack install ${INSTALL_OPTS} $@
-        fi
+        spack_install_with_args ${spec_to_install}
         # load the spec to create directories and prevent future "permission
         # denied" errors.
         if [ ${only_deps} -eq 1 ]; then
@@ -61,6 +57,15 @@ function install_if_missing() {
         spack unload --all
     fi
 #   set -e
+}
+
+function spack_install_with_args() {
+    args=$@
+    if [ -z "${SRUN}" ]; then
+        spack install ${INSTALL_OPTS} ${args}
+    else
+        ${SRUN} ${DESTDIR}/bin/spack install ${INSTALL_OPTS} ${args}
+    fi
 }
 
 function git_clone() {
@@ -174,18 +179,46 @@ function do_spack_installs() {
 function do_gcc_installs() {
     def_gcc=$(gcc -dumpversion)
     min_gcc=$(( ${def_gcc} + 1 ))
-    max_gcc=$(spack versions -s gcc | grep '\.' | sort -nr | head -n1 | cut -d. -f1)
-    for v in $(seq ${min_gcc} ${max_gcc}); do
-        install_if_missing gcc@${v}
+    max_gcc=$(echo $(spack versions -s gcc | grep '\.' | sort -nr | head -n1 | cut -d. -f1))
+
+    # New gcc bootstrapping method to use OS-provided gcc to build latest,
+    # then uninstall spack packages related to OS-provided gcc.
+
+    # For whatever reason, it seems that gcc 13 can't be built without
+    # autoconf-archive available.
+    install_if_missing autoconf-archive%gcc@${def_gcc}
+    spack load autoconf-archive%gcc@${def_gcc}
+    # Build latest gcc with OS gcc, load it, add to available compilers list
+    install_if_missing gcc@${max_gcc}%gcc@${def_gcc}
+    spack load gcc@${max_gcc}%gcc@${def_gcc}
+    spack compiler find --scope=site
+    spack unload --all
+
+    # Rebuild latest gcc from scratch with latest gcc
+    spack_install_with_args --fresh gcc@${max_gcc}%gcc@${max_gcc}
+    # Load the latest-latest gcc, remove previous latest gcc from available
+    # compilers list, add latest-latest to available compilers list.
+    spack load gcc@${max_gcc}%gcc@${max_gcc}
+    spack compiler rm gcc@${max_gcc}
+    spack compiler find --scope=site
+    spack unload --all
+
+    # Uninstall all packages built with OS gcc
+    spack uninstall --all --yes-to-all %gcc@${def_gcc}
+    
+    for v in $(seq ${max_gcc}-1 ${min_gcc}); do
+        install_if_missing gcc@${v}%gcc@${max_gcc}
     done
     for v in $(seq ${min_gcc} ${max_gcc}); do
-        spack load gcc@${v}
+        spack load gcc@${v}%gcc@${max_gcc}
     done
-    spack compiler find --scope site # to find spack-installed gcc
+    spack compiler find --scope site # to find other spack-installed gccs
     rm -f ~/.spack/linux/compilers.yaml
     spack unload --all
     spack compiler find --scope site # to find OS-installed gcc
-    ONE_OF=$(spack compiler list --scope site | grep @ | sort -t@ -k2 -n | sed "s/^/'%/g;s/$/'/g" | paste -s -d,)
+    # Add all available gcc versions to require, preferring later versions
+    # wherever possible.
+    ONE_OF=$(spack compiler list --scope site | grep @ | sort -t@ -k2 -nr | sed "s/^/'%/g;s/$/'/g" | paste -s -d,)
     add_if_missing    "    require:" ${DESTDIR}/etc/spack/packages.yaml
     remove_if_present '    - one_of:' ${DESTDIR}/etc/spack/packages.yaml
     add_if_missing    "    - one_of: [${ONE_OF}]" ${DESTDIR}/etc/spack/packages.yaml
