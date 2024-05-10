@@ -208,7 +208,7 @@ function do_gcc_installs() {
     # Uninstall all packages built with OS gcc
     spack uninstall --all --yes-to-all %gcc@${def_gcc}
     
-    for v in $(seq ${max_gcc}-1 ${min_gcc}); do
+    for v in $(seq ${max_gcc} -1 ${min_gcc}); do
         install_if_missing gcc@${v}%gcc@${max_gcc}
     done
     for v in $(seq ${min_gcc} ${max_gcc}); do
