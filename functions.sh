@@ -210,24 +210,24 @@ function do_gcc_installs() {
 
         # Uninstall all packages built with OS gcc
         spack uninstall --all --yes-to-all %gcc@${def_gcc}
+        # Install other gcc versions using latest gcc
+        for v in $(seq ${max_gcc} -1 ${min_gcc}); do
+            install_if_missing gcc@${v}%gcc@${max_gcc}
+        done
+        for v in $(seq ${min_gcc} ${max_gcc}); do
+            spack load gcc@${v}%gcc@${max_gcc}
+        done
+        spack compiler find --scope site # to find other spack-installed gccs
+        rm -f ~/.spack/linux/compilers.yaml
+        spack unload --all
+        spack compiler find --scope site # to find OS-installed gcc
+        # Add all available gcc versions to require, preferring later versions
+        # wherever possible.
+        ONE_OF=$(spack compiler list --scope site | grep @ | sort -t@ -k2 -nr | sed "s/^/'%/g;s/$/'/g" | paste -s -d,)
+        add_if_missing    "    require:" ${DESTDIR}/etc/spack/packages.yaml
+        remove_if_present '    - one_of:' ${DESTDIR}/etc/spack/packages.yaml
+        add_if_missing    "    - one_of: [${ONE_OF}]" ${DESTDIR}/etc/spack/packages.yaml
     fi
-    
-    for v in $(seq ${max_gcc} -1 ${min_gcc}); do
-        install_if_missing gcc@${v}%gcc@${max_gcc}
-    done
-    for v in $(seq ${min_gcc} ${max_gcc}); do
-        spack load gcc@${v}%gcc@${max_gcc}
-    done
-    spack compiler find --scope site # to find other spack-installed gccs
-    rm -f ~/.spack/linux/compilers.yaml
-    spack unload --all
-    spack compiler find --scope site # to find OS-installed gcc
-    # Add all available gcc versions to require, preferring later versions
-    # wherever possible.
-    ONE_OF=$(spack compiler list --scope site | grep @ | sort -t@ -k2 -nr | sed "s/^/'%/g;s/$/'/g" | paste -s -d,)
-    add_if_missing    "    require:" ${DESTDIR}/etc/spack/packages.yaml
-    remove_if_present '    - one_of:' ${DESTDIR}/etc/spack/packages.yaml
-    add_if_missing    "    - one_of: [${ONE_OF}]" ${DESTDIR}/etc/spack/packages.yaml
 }
 
 function find_duplicates() {
