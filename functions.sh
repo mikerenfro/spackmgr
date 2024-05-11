@@ -181,7 +181,7 @@ function do_spack_installs() {
 function do_gcc_installs() {
     def_gcc=$(gcc -dumpversion)
     min_gcc=$(( ${def_gcc} + 1 ))
-    max_gcc=$(echo $(spack versions -s gcc | grep '\.' | sort -nr | head -n1 | cut -d. -f1))
+    max_gcc=${MAX_GCC:-$(echo $(spack versions -s gcc | grep '\.' | sort -nr | head -n1 | cut -d. -f1))}
 
     # New gcc bootstrapping method to use OS-provided gcc to build latest,
     # then uninstall spack packages related to OS-provided gcc.
