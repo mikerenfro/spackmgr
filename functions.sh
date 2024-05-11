@@ -198,6 +198,9 @@ function do_gcc_installs() {
         spack load gcc@${max_gcc}%gcc@${def_gcc}
         spack compiler find --scope=site
         spack unload --all
+        # initial garbage collect (among other things) removes perl still
+        # referred to gcc 8. A new perl can be built from gcc 12 when needed.
+        spack gc --yes-to-all
 
         # Rebuild latest gcc from scratch with latest gcc
         spack_install_with_args --fresh gcc@${max_gcc}%gcc@${max_gcc}
@@ -227,9 +230,6 @@ function do_gcc_installs() {
         add_if_missing    "    require:" ${DESTDIR}/etc/spack/packages.yaml
         remove_if_present '    - one_of:' ${DESTDIR}/etc/spack/packages.yaml
         add_if_missing    "    - one_of: [${ONE_OF}]" ${DESTDIR}/etc/spack/packages.yaml
-        # initial garbage collect (among other things) removes perl still
-        # referred to gcc 8. A new perl can be built from gcc 12 when needed.
-        spack gc --yes-to-all
     fi
 }
 
