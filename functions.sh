@@ -101,9 +101,11 @@ function initialize_spack() {
     fi
     # Move to source folder (for NAMD, mostly) and bootstrap compiler/package settings
     cd ${BASEDIR}/sources
-    spack compiler find --scope site
-    rm -f ~/.spack/linux/compilers.yaml
-    spack compiler find --scope site
+    if [ ! -f ${BASEDIR}/etc/spack/compilers.yaml ]; then
+        spack compiler find --scope site
+        rm -f ~/.spack/linux/compilers.yaml
+        spack compiler find --scope site
+    fi
     if [ "${REMOTETAG}" \> "v0.21.0" ]; then
         if [ ! -f ${DESTDIR}/etc/spack/concretizer.yaml ]; then
             cat >> ${DESTDIR}/etc/spack/concretizer.yaml <<EOD
