@@ -285,7 +285,13 @@ if [ "${USE_CLUSTER}" == "1" ]; then
         MINCPUS=${PARTITION_MAXCPUS}
     fi
     CPUS_PER_TASK=$((${MINCPUS} / ${PARALLEL_INSTALLS}))
-    SRUN="srun --ntasks-per-node=${PARALLEL_INSTALLS} --cpus-per-task=${CPUS_PER_TASK} --nodes=${NODES} --account=${CLUSTER_JOB_ACCOUNT} --partition=${CLUSTER_PARTITION}"
+    if [ ! -z "${SLURM_JOB_ID}" ]; then
+        # already running inside an allocation, use it.
+        JOBID_FLAG="--jobid=${SLURM_JOB_ID}"
+    else
+        JOBID_FLAG=""
+    fi
+    SRUN="srun ${JOBID_FLAG} --ntasks-per-node=${PARALLEL_INSTALLS} --cpus-per-task=${CPUS_PER_TASK} --nodes=${NODES} --account=${CLUSTER_JOB_ACCOUNT} --partition=${CLUSTER_PARTITION}"
     J_FLAG=${CPUS_PER_TASK}
 else
     # for local installations
