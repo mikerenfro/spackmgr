@@ -163,6 +163,7 @@ function do_spack_installs() {
         if [ -f ${BASEDIR}/${f} ]; then
             while IFS= read -r spec ; do
                 if [ -n "${spec}" ]; then
+                    set +e
                     if echo "${spec}" | grep -qv '^#' ; then
                         if echo ${spec} | grep -q __CA__; then
                             new_spec=$(echo ${spec} | sed "s/__CA__/${CUDA_ARCH}/g")
@@ -174,6 +175,7 @@ function do_spack_installs() {
                         fi
                         # find_duplicates
                     fi
+                    # install_if_missing will always go back to set -e. no need for it here.
                 fi
             done < ${BASEDIR}/${f}
         fi
