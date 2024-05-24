@@ -254,6 +254,9 @@ function do_gcc_installs() {
         add_if_missing    "    require:" ${DESTDIR}/etc/spack/packages.yaml
         remove_if_present '    - one_of:' ${DESTDIR}/etc/spack/packages.yaml
         add_if_missing    "    - one_of: [${ONE_OF}]" ${DESTDIR}/etc/spack/packages.yaml
+        # Perl still has a reference to the OS gcc, get rid of it. It can
+        # get reinstalled later as needed.
+        spack uninstall --dependents perl%gcc@${max_gcc}
     fi
 }
 
