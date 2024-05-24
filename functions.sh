@@ -171,7 +171,8 @@ EOD
 function do_spack_installs() {
     for f in specs-common.txt specs-${REMOTETAG}.txt; do
         if [ -f ${BASEDIR}/${f} ]; then
-            while IFS= read -r spec ; do
+            while IFS= read -r -u 3 spec ; do
+                # https://stackoverflow.com/a/10929511
                 if [ -n "${spec}" ]; then
                     set +e
                     if echo "${spec}" | grep -qv '^#' ; then
@@ -187,7 +188,7 @@ function do_spack_installs() {
                     fi
                     # install_if_missing will always go back to set -e. no need for it here.
                 fi
-            done < ${BASEDIR}/${f}
+            done 3< ${BASEDIR}/${f}
         fi
     done
 }
