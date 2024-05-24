@@ -51,10 +51,12 @@ function install_if_missing() {
             spack mark -e ${toplevel_deps}
         else
             spec_without_deprecated=$(echo "${spec_to_install}" | sed 's/--deprecated//g')
+            echo loading ${spec_without_deprecated}
             spack load ${spec_without_deprecated}
         fi
         # unload everything to clean up for next time
         spack unload --all
+        echo unloaded all packages
     fi
   set -e
 }
@@ -66,6 +68,7 @@ function spack_install_with_args() {
         spack install ${INSTALL_OPTS} ${args}
     else
         ${SRUN} ${DESTDIR}/bin/spack install ${INSTALL_OPTS} ${args}
+        echo return code from srun is $?
     fi
     set +e
 }
@@ -150,7 +153,7 @@ EOD
     buildable: False
 EOD
         fi
-       set -e
+        set -e
         cat >> ${DESTDIR}/etc/spack/packages.yaml <<EOD
   all:
     target: ['x86_64_v3']
@@ -190,35 +193,42 @@ function do_gcc_installs() {
     # New gcc bootstrapping method to use OS-provided gcc to build latest,
     # then uninstall spack packages related to OS-provided gcc.
 
-    if spack find gcc@${max_gcc}%gcc@${max_gcc} >& /dev/null; then
-        echo "### gcc@${max_gcc}%gcc@${max_gcc} already installed"
+    if spack find gcc@${min_gcc}%gcc@${max_gcc} >& /dev/null; then
+        echo "### gcc@${min_gcc}%gcc@${max_gcc} already installed, gcc bootstrapping must be done"
     else
-        # For whatever reason, it seems that gcc 13 can't be built without
-        # autoconf-archive available.
-        install_if_missing autoconf-archive%gcc@${def_gcc}
-        spack load autoconf-archive%gcc@${def_gcc}
-        # Build latest gcc with OS gcc, load it, add to available compilers list
-        install_if_missing gcc@${max_gcc}%gcc@${def_gcc}
-        spack load gcc@${max_gcc}%gcc@${def_gcc}
-        spack compiler find --scope=site
-        spack unload --all
-        # initial garbage collect (among other things) removes perl still
-        # referred to gcc 8. A new perl can be built from gcc 12 when needed.
-        spack gc --yes-to-all
+        if spack find gcc@${max_gcc}%gcc@${def_gcc} >& /dev/null; then
+            echo "### gcc@${max_gcc}%gcc@${def_gcc} already installed, bootstrapping past OS gcc must be done"
+        else
+            # For whatever reason, it seems that gcc 13 can't be built without
+            # autoconf-archive available.
+            install_if_missing autoconf-archive%gcc@${def_gcc}
+            spack load autoconf-archive%gcc@${def_gcc}
+            # Build latest gcc with OS gcc, load it, add to available compilers list
+            install_if_missing gcc@${max_gcc}%gcc@${def_gcc}
+            spack load gcc@${max_gcc}%gcc@${def_gcc}
+            spack compiler find --scope=site
+            spack unload --all
+            # initial garbage collect (among other things) removes perl still
+            # referred to gcc 8. A new perl can be built from later gcc when needed.
+            spack gc --yes-to-all
+        fi
+        if spack find gcc@${max_gcc}%gcc@${max_gcc} >& /dev/null; then
+            echo "### gcc@${max_gcc}%gcc@${max_gcc} already installed, ready to build everything else with it"
+        else
+            # Rebuild latest gcc from scratch with latest gcc
+            spack_install_with_args --fresh gcc@${max_gcc}%gcc@${max_gcc}
+            # Load the latest-latest gcc, remove previous latest gcc from available
+            # compilers list, add latest-latest to available compilers list.
+            spack load gcc@${max_gcc}%gcc@${max_gcc}
+            spack compiler rm gcc@${max_gcc}
+            spack compiler find --scope=site
+            spack unload --all
+            # Uninstall all packages built with OS gcc
+            spack uninstall --all --yes-to-all %gcc@${def_gcc}
+        fi
 
-        # Rebuild latest gcc from scratch with latest gcc
-        spack_install_with_args --fresh gcc@${max_gcc}%gcc@${max_gcc}
-        # Load the latest-latest gcc, remove previous latest gcc from available
-        # compilers list, add latest-latest to available compilers list.
-        spack load gcc@${max_gcc}%gcc@${max_gcc}
-        spack compiler rm gcc@${max_gcc}
-        spack compiler find --scope=site
-        spack unload --all
-
-        # Uninstall all packages built with OS gcc
-        spack uninstall --all --yes-to-all %gcc@${def_gcc}
         # Install other gcc versions using latest gcc
-        for v in $(seq ${max_gcc} -1 ${min_gcc}); do
+        for v in $(seq $((${max_gcc} - 1)) -1 ${min_gcc}); do
             install_if_missing gcc@${v}%gcc@${max_gcc}
         done
         for v in $(seq ${min_gcc} ${max_gcc}); do
@@ -243,16 +253,17 @@ function find_duplicates() {
         echo "Duplicate packages/versions found:"
         spack find | sort | uniq -c | grep -v ' 1 '
     fi
-   set -e
+    set -e
 }
 
 usage() {
-    echo "Usage: $0 tag [gcc|all]"
+    echo "Usage: $0 tag [gcc|all|none]"
     echo "where: tag is a Spack Git tag"
     echo "(usually from https://github.com/spack/spack/tags (e.g., v0.19.1)"
     echo "Add the parameter 'gcc' to install all newer versions of GCC,"
-    echo "or add the parameter 'all' to also install packages from"
-    echo "specs-common.txt and specs-tag.txt"
+    echo "add the parameter 'all' to also install packages from"
+    echo "specs-common.txt and specs-tag.txt, or add the parameter 'none'"
+    echo "to install nothing at all."
     exit 1
 }
 
@@ -267,6 +278,8 @@ function do_full_install() {
         do_gcc_installs
         do_spack_installs
         # spack gc --yes-to-all
+    elif [ "$2" == "none" ]; then
+        :
     else
         usage
     fi
