@@ -1,5 +1,12 @@
 set -e # exit on any non-zero exit code
 
+# https://unix.stackexchange.com/a/375159
+err_report() {
+  echo "errexit on line $(caller)" >&2
+}
+
+trap err_report ERR
+
 function add_if_missing() {
     grep -qFx "$1" $2 || echo "$1" >> $2
 }
@@ -203,13 +210,15 @@ function do_gcc_installs() {
             # autoconf-archive available.
             install_if_missing autoconf-archive%gcc@${def_gcc}
             spack load autoconf-archive%gcc@${def_gcc}
-            # Build latest gcc with OS gcc, load it, add to available compilers list
+            # Build latest gcc with OS gcc, load it, add to available
+            # compilers list
             install_if_missing gcc@${max_gcc}%gcc@${def_gcc}
             spack load gcc@${max_gcc}%gcc@${def_gcc}
             spack compiler find --scope=site
             spack unload --all
             # initial garbage collect (among other things) removes perl still
-            # referred to gcc 8. A new perl can be built from later gcc when needed.
+            # referred to gcc 8. A new perl can be built from later gcc when
+            # needed.
             spack gc --yes-to-all
         fi
         if spack find gcc@${max_gcc}%gcc@${max_gcc} >& /dev/null; then
@@ -217,8 +226,9 @@ function do_gcc_installs() {
         else
             # Rebuild latest gcc from scratch with latest gcc
             spack_install_with_args --fresh gcc@${max_gcc}%gcc@${max_gcc}
-            # Load the latest-latest gcc, remove previous latest gcc from available
-            # compilers list, add latest-latest to available compilers list.
+            # Load the latest-latest gcc, remove previous latest gcc from
+            # available compilers list, add latest-latest to available
+            # compilers list.
             spack load gcc@${max_gcc}%gcc@${max_gcc}
             spack compiler rm gcc@${max_gcc}
             spack compiler find --scope=site
