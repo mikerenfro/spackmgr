@@ -207,10 +207,6 @@ function do_gcc_installs() {
         if spack find gcc@${max_gcc}%gcc@${def_gcc} >& /dev/null; then
             echo "### gcc@${max_gcc}%gcc@${def_gcc} already installed, bootstrapping past OS gcc must be done"
         else
-            # For whatever reason, it seems that gcc 13 can't be built without
-            # autoconf-archive available.
-            install_if_missing autoconf-archive%gcc@${def_gcc}
-            spack load autoconf-archive%gcc@${def_gcc}
             # Build latest gcc with OS gcc, load it, add to available
             # compilers list
             install_if_missing gcc@${max_gcc}%gcc@${def_gcc}
@@ -226,7 +222,7 @@ function do_gcc_installs() {
             echo "### gcc@${max_gcc}%gcc@${max_gcc} already installed, ready to build everything else with it"
         else
             # Rebuild latest gcc from scratch with latest gcc
-            spack_install_with_args --fresh gcc@${max_gcc}%gcc@${max_gcc}
+            spack_install_with_args --fresh gcc@${max_gcc}%gcc@${max_gcc} +nvptx
             # Load the latest-latest gcc, remove previous latest gcc from
             # available compilers list, add latest-latest to available
             # compilers list.
@@ -240,7 +236,7 @@ function do_gcc_installs() {
 
         # Install other gcc versions using latest gcc
         for v in $(seq $((${max_gcc} - 1)) -1 ${min_gcc}); do
-            install_if_missing gcc@${v}%gcc@${max_gcc}
+            install_if_missing gcc@${v}%gcc@${max_gcc} +nvptx
         done
         for v in $(seq ${min_gcc} ${max_gcc}); do
             spack load gcc@${v}%gcc@${max_gcc}

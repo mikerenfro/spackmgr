@@ -11,11 +11,11 @@ Vagrant.configure("2") do |config|
   config.vm.provision "shell", inline: <<-SHELL
     # Bare minimum Spack dependencies
     yum -y install epel-release ; crb enable
-    yum -y install gcc gcc-c++ gcc-gfortran git patch libstdc++-static python36
+    yum -y install gcc gcc-c++ gcc-gfortran git patch python36
     # If we need Slurm:
     yum -y install slurm-devel
   SHELL
   config.vm.provision "shell", privileged: false, inline: <<-SHELLUNPRIV
-    /vagrant/build v0.20.1
+    /vagrant/build v0.22.1 gcc
   SHELLUNPRIV
 end
