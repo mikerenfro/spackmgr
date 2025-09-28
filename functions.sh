@@ -1,4 +1,4 @@
-set -e # exit on any non-zero exit code
+#set -e # exit on any non-zero exit code
 
 # https://unix.stackexchange.com/a/375159
 err_report() {
@@ -16,7 +16,7 @@ function remove_if_present() {
 }
 
 function install_if_missing() {
-    set +e
+    #set +e
     spec_to_install=""
     only_deps=0
     if echo "$@" | grep -q -- "--only dependencies"; then
@@ -65,19 +65,19 @@ function install_if_missing() {
         spack unload --all
         echo unloaded all packages
     fi
-  set -e
+  #set -e
 }
 
 function spack_install_with_args() {
     args=$@
-    set -e
+    #set -e
     if [ -z "${SRUN}" ]; then
         spack install ${INSTALL_OPTS} ${args}
     else
         ${SRUN} ${DESTDIR}/bin/spack install ${INSTALL_OPTS} ${args}
         echo return code from srun is $?
     fi
-    set +e
+    #set +e
 }
 
 function git_clone() {
@@ -111,24 +111,10 @@ function initialize_spack() {
     fi
     # Move to source folder (for NAMD, mostly) and bootstrap compiler/package settings
     cd ${BASEDIR}/sources
-    if [ ! -f ${BASEDIR}/etc/spack/compilers.yaml ]; then
+    if [ ! -f ${BASEDIR}/etc/spack/packages.yaml ]; then
         spack compiler find --scope site
         rm -f ~/.spack/linux/compilers.yaml
         spack compiler find --scope site
-    fi
-    if [ "${REMOTETAG}" \> "v0.21.0" ]; then
-        if [ ! -f ${DESTDIR}/etc/spack/concretizer.yaml ]; then
-            cat >> ${DESTDIR}/etc/spack/concretizer.yaml <<EOD
-concretizer:
-  reuse: true
-  duplicates:
-    strategy: none
-EOD
-        fi
-    fi
-    if [ ! -f ${DESTDIR}/etc/spack/packages.yaml ]; then
-        echo "packages:" > ${DESTDIR}/etc/spack/packages.yaml
-        set +e
         if command -v sinfo > /dev/null; then
             slurm_version=$(sinfo --version | awk '{print $NF}')
             slurm_prefix=$(dirname $(dirname $(which sinfo)))
@@ -160,11 +146,20 @@ EOD
     buildable: False
 EOD
         fi
-        set -e
         cat >> ${DESTDIR}/etc/spack/packages.yaml <<EOD
   all:
     target: ['x86_64_v3']
 EOD
+    fi
+    if [ "${REMOTETAG}" \> "v0.21.0" ]; then
+        if [ ! -f ${DESTDIR}/etc/spack/concretizer.yaml ]; then
+            cat >> ${DESTDIR}/etc/spack/concretizer.yaml <<EOD
+concretizer:
+  reuse: true
+  duplicates:
+    strategy: minimal
+EOD
+        fi
     fi
 }
 
@@ -174,7 +169,7 @@ function do_spack_installs() {
             while IFS= read -r -u 3 spec ; do
                 # https://stackoverflow.com/a/10929511
                 if [ -n "${spec}" ]; then
-                    set +e
+                    #set +e
                     if echo "${spec}" | grep -qv '^#' ; then
                         if echo ${spec} | grep -q __CA__; then
                             new_spec=$(echo ${spec} | sed "s/__CA__/${CUDA_ARCH}/g")
@@ -230,8 +225,6 @@ function do_gcc_installs() {
             spack compiler rm gcc@${max_gcc}
             spack compiler find --scope=site
             spack unload --all
-            # Uninstall all packages built with OS gcc
-            spack uninstall --all --yes-to-all %gcc@${def_gcc}
         fi
 
         # Install other gcc versions using latest gcc
@@ -245,6 +238,9 @@ function do_gcc_installs() {
         rm -f ~/.spack/linux/compilers.yaml
         spack unload --all
         spack compiler find --scope site # to find OS-installed gcc
+        # Uninstall all packages built with OS gcc
+        spack uninstall --all --yes-to-all %gcc@${def_gcc}
+
         # Add all available gcc versions to require, preferring later versions
         # wherever possible.
         ONE_OF=$(spack compiler list --scope site | grep @ | sort -t@ -k2 -nr | sed "s/^/'%/g;s/$/'/g" | paste -s -d,)
@@ -258,12 +254,12 @@ function do_gcc_installs() {
 }
 
 function find_duplicates() {
-    set +e
+    #set +e
     if spack find | grep @ | grep -v / | sort | uniq -c | grep -qv ' 1 '; then
         echo "Duplicate packages/versions found:"
         spack find | sort | uniq -c | grep -v ' 1 '
     fi
-    set -e
+    #set -e
 }
 
 usage() {

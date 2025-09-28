@@ -1,12 +1,12 @@
 #!/bin/bash
-BASEDIR=$(dirname $(realpath $0))
+BASEDIR=/apps/spack
 USE_CLUSTER=0
 CLUSTER_PARTITION=batch-impulse
-NODES=1
+NODES=2
 PARALLEL_INSTALLS=1
 CLUSTER_JOB_ACCOUNT=hpcadmins
 CUDA_ARCH="37,80"
-MAX_GCC=13
+MAX_GCC=12
 REMOTEURL='https://github.com/spack/spack.git'
 REMOTETAG=$1
 CLONEDIR=${PWD}/git
